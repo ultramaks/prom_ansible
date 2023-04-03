@@ -1,0 +1,50 @@
+- name: Installing Docker and run Node Exporter
+  hosts: localhost
+  become: true
+  
+  tasks:
+    - name: Update apt package cache
+      apt: update_cache=yes
+          
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
+        state: present
+        
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+        
+    - name: Install Docker
+      apt:
+        name: ['docker-ce', 'docker-ce-cli', 'docker-compose-plugin']
+        state: present
+        
+    - name: Starting docker service
+      service:
+        name: docker
+        state: started
+
+    - name: Enabling docker service
+      service:
+        name: docker
+        enabled: yes
+    
+    - name: Run Node Exporter Docker container
+      docker_container:
+        name: node_exporter
+        restart_policy: always
+        image: prom/node-exporter
+        published_ports: "9100:9100"
+        state: started
